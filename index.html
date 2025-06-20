@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Chat</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        #chat { height: 300px; border: 1px solid #ccc; padding: 10px; overflow-y: scroll; margin-bottom: 10px; }
+        #message { width: 70%; padding: 5px; }
+        #nickname { width: 20%; padding: 5px; }
+        button { padding: 5px 10px; }
+    </style>
+</head>
+<body>
+    <h1>Simple Chat</h1>
+    <div id="chat"></div>
+    <input type="text" id="nickname" placeholder="Your nickname" value="Anonymous">
+    <input type="text" id="message" placeholder="Type your message">
+    <button id="send">Send</button>
+
+    <script>
+        const chat = document.getElementById('chat');
+        const messageInput = document.getElementById('message');
+        const nicknameInput = document.getElementById('nickname');
+        const sendButton = document.getElementById('send');
+        
+        // Connect to WebSocket server
+        const ws = new WebSocket('ws://localhost:8081');
+        
+        ws.onopen = () => {
+            console.log('Connected to chat server');
+        };
+        
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            
+            if (data.type === 'history') {
+                // Display chat history
+                data.data.forEach(msg => {
+                    displayMessage(msg);
+                });
+            } else if (data.type === 'message') {
+                // Display new message
+                displayMessage(data.data);
+            }
+        };
+        
+        ws.onclose = () => {
+            chat.innerHTML += '<div>Disconnected from server</div>';
+        };
+        
+        function displayMessage(rawMessage) {
+            const [timestamp, nickname, message] = rawMessage.split('|');
+            const time = new Date(timestamp).toLocaleTimeString();
+            chat.innerHTML += `<div><strong>${nickname}</strong> (${time}): ${message}</div>`;
+            chat.scrollTop = chat.scrollHeight;
+        }
+        
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            const nickname = nicknameInput.value.trim() || 'Anonymous';
+            
+            if (message) {
+                ws.send(JSON.stringify({
+                    nickname: nickname,
+                    text: message
+                }));
+                messageInput.value = '';
+            }
+        }
+        
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
