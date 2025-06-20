@@ -18,3 +18,9 @@ Run backend websocket nodejs server
 ```
 node server.js
 ```
+
+# Features
+
+The data is stored in the plain text file
+chat.txt, line by line, with one message per line 
+in the format timestamp|user|message
